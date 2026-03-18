@@ -8,7 +8,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 <meta name="apple-mobile-web-app-title" content="AI 학습"/>
 <meta name="theme-color" content="#0f0f11"/>
-<link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f0f11'/><text y='.9em' font-size='80' x='10'>📚</text></svg>"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
 <style>
@@ -208,7 +207,7 @@ body{
 
   <!-- Upload -->
   <div class="upload-zone" id="dropZone">
-    <input type="file" id="fileInput" accept=".pdf" capture="environment"/>
+    <input type="file" id="fileInput" accept=".pdf"/>
     <div class="upload-icon">📄</div>
     <h3>PDF 파일을 선택하세요</h3>
     <p>정보보호론 교재, 강의자료, 정리노트 등<br>파일 앱에서 PDF를 가져올 수 있어요</p>
@@ -426,10 +425,6 @@ function reset() {
   document.getElementById('results').classList.remove('show');
   document.getElementById('errorMsg').classList.remove('show');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
 }
 </script>
 </body>
