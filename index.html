@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>정보보호론 AI 학습 도우미</title>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<meta name="apple-mobile-web-app-title" content="AI 학습"/>
+<meta name="theme-color" content="#0f0f11"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f0f11'/><text y='.9em' font-size='80' x='10'>📚</text></svg>"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0f0f11;
+  --bg2:#1a1a1f;
+  --bg3:#222228;
+  --border:rgba(255,255,255,0.08);
+  --border2:rgba(255,255,255,0.15);
+  --text:#f0eee8;
+  --text2:#888880;
+  --text3:#555550;
+  --accent:#c8f064;
+  --accent2:#9bba3e;
+  --radius:16px;
+}
+body{
+  font-family:'Noto Sans KR',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  min-height:100dvh;
+  -webkit-text-size-adjust:100%;
+}
+
+/* Layout */
+.container{max-width:780px;margin:0 auto;padding:2rem 1.2rem calc(3rem + env(safe-area-inset-bottom));}
+
+/* Mobile */
+@media(max-width:480px){
+  .header h1{font-size:28px;}
+  .upload-zone{padding:2rem 1rem;}
+  .card-front,.card-back{padding:1rem 1.1rem;}
+  .summary-card{padding:1.2rem;}
+}
+.flashcard,.gen-btn,.reset-btn{-webkit-tap-highlight-color:transparent;}
+
+/* Sticky bottom button on mobile */
+.sticky-wrap{
+  position:sticky;bottom:0;
+  background:linear-gradient(transparent,var(--bg) 35%);
+  padding:1rem 0 calc(0.8rem + env(safe-area-inset-bottom));
+  display:none;pointer-events:none;
+}
+.sticky-wrap.show{display:block;pointer-events:all;}
+.sticky-wrap .gen-btn{margin-top:0;display:block !important;}
+
+/* Header */
+.header{text-align:center;margin-bottom:3rem;padding-top:1rem;}
+.header .eyebrow{font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:0.8rem;}
+.header h1{font-family:'DM Serif Display',serif;font-size:40px;font-weight:400;line-height:1.2;color:var(--text);}
+.header p{font-size:14px;color:var(--text2);margin-top:0.8rem;line-height:1.7;}
+
+/* Upload Zone */
+.upload-zone{
+  border:1.5px dashed var(--border2);
+  border-radius:var(--radius);
+  padding:3rem 2rem;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.2s;
+  background:var(--bg2);
+  position:relative;
+}
+.upload-zone:hover{border-color:var(--accent);background:var(--bg3);}
+.upload-zone.drag{border-color:var(--accent);background:var(--bg3);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-icon{font-size:36px;margin-bottom:1rem;}
+.upload-zone h3{font-size:16px;font-weight:500;margin-bottom:6px;}
+.upload-zone p{font-size:13px;color:var(--text2);}
+.file-selected{
+  display:none;align-items:center;gap:12px;
+  padding:14px 18px;background:var(--bg3);
+  border-radius:12px;margin-top:1rem;border:0.5px solid var(--border);
+}
+.file-selected.show{display:flex;}
+.file-icon{font-size:24px;}
+.file-info{flex:1;text-align:left;}
+.file-info .fname{font-size:14px;font-weight:500;}
+.file-info .fsize{font-size:12px;color:var(--text2);margin-top:2px;}
+
+/* Generate Button */
+.gen-btn{
+  width:100%;margin-top:1.2rem;
+  padding:16px;border:none;border-radius:var(--radius);
+  background:var(--accent);color:#1a1a1a;
+  font-size:15px;font-weight:700;
+  font-family:'Noto Sans KR',sans-serif;
+  cursor:pointer;transition:all 0.15s;
+  display:none;
+}
+.gen-btn.show{display:block;}
+.gen-btn:hover{background:var(--accent2);}
+.gen-btn:disabled{opacity:0.5;cursor:not-allowed;}
+
+/* Loading */
+.loading{display:none;text-align:center;padding:2.5rem;margin-top:1rem;}
+.loading.show{display:block;}
+.spinner{
+  width:36px;height:36px;border:2px solid var(--border2);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin 0.8s linear infinite;margin:0 auto 1rem;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading p{font-size:14px;color:var(--text2);}
+.loading .step{font-size:12px;color:var(--text3);margin-top:6px;}
+
+/* Results */
+.results{display:none;margin-top:2.5rem;}
+.results.show{display:block;}
+
+.section-title{
+  font-size:11px;letter-spacing:3px;color:var(--accent);
+  text-transform:uppercase;margin-bottom:1.2rem;
+}
+
+/* Summary */
+.summary-card{
+  background:var(--bg2);border:0.5px solid var(--border);
+  border-radius:var(--radius);padding:1.5rem;margin-bottom:2rem;
+}
+.summary-card h3{font-size:17px;font-weight:700;margin-bottom:1rem;color:var(--text);}
+.summary-content{font-size:14px;color:#ccc;line-height:1.9;}
+.summary-content p{margin-bottom:0.8rem;}
+.summary-content strong{color:var(--accent);font-weight:500;}
+
+/* Keywords */
+.keywords{display:flex;flex-wrap:wrap;gap:8px;margin-top:1.2rem;}
+.keyword{
+  padding:5px 12px;border-radius:20px;font-size:12px;
+  background:rgba(200,240,100,0.1);color:var(--accent);
+  border:0.5px solid rgba(200,240,100,0.2);
+}
+
+/* Flashcards */
+.flashcards-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;}
+.flashcards-header .section-title{margin-bottom:0;}
+.card-count{font-size:12px;color:var(--text2);}
+
+.flashcard-grid{display:flex;flex-direction:column;gap:10px;}
+.flashcard{
+  background:var(--bg2);border:0.5px solid var(--border);
+  border-radius:14px;overflow:hidden;cursor:pointer;
+  transition:border-color 0.15s;
+}
+.flashcard:hover{border-color:var(--border2);}
+.flashcard.flipped .card-front{display:none;}
+.flashcard.flipped .card-back{display:flex;}
+.flashcard.flipped{border-color:var(--accent);}
+
+.card-front{
+  padding:1.2rem 1.4rem;display:flex;
+  align-items:center;justify-content:space-between;gap:12px;
+}
+.card-q{font-size:14px;font-weight:500;line-height:1.5;flex:1;}
+.card-flip-hint{font-size:11px;color:var(--text3);flex-shrink:0;}
+.card-back{
+  display:none;padding:1.2rem 1.4rem;
+  flex-direction:column;gap:8px;
+  border-top:0.5px solid var(--border);
+}
+.card-back-q{font-size:12px;color:var(--text3);}
+.card-a{font-size:14px;color:#d4f0a0;line-height:1.7;}
+.card-num{
+  font-size:11px;color:var(--text3);
+  padding:3px 8px;background:var(--bg3);
+  border-radius:6px;align-self:flex-start;
+}
+
+/* Reset btn */
+.reset-btn{
+  margin-top:2rem;padding:10px 20px;
+  border:0.5px solid var(--border2);border-radius:10px;
+  background:transparent;color:var(--text2);
+  font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;
+}
+.reset-btn:hover{color:var(--text);border-color:var(--border2);}
+
+/* Error */
+.error-msg{
+  display:none;margin-top:1rem;padding:14px 16px;
+  background:rgba(239,68,68,0.1);border:0.5px solid rgba(239,68,68,0.3);
+  border-radius:10px;font-size:13px;color:#f87171;
+}
+.error-msg.show{display:block;}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="eyebrow">AI Study Assistant</div>
+    <h1>정보보호론<br>AI 학습 도우미</h1>
+    <p>PDF를 업로드하면 AI가 핵심 내용을 요약하고<br>플래시카드를 자동으로 만들어드려요</p>
+  </div>
+
+  <!-- Upload -->
+  <div class="upload-zone" id="dropZone">
+    <input type="file" id="fileInput" accept=".pdf" capture="environment"/>
+    <div class="upload-icon">📄</div>
+    <h3>PDF 파일을 선택하세요</h3>
+    <p>정보보호론 교재, 강의자료, 정리노트 등<br>파일 앱에서 PDF를 가져올 수 있어요</p>
+  </div>
+
+  <div class="file-selected" id="fileSelected">
+    <div class="file-icon">📋</div>
+    <div class="file-info">
+      <div class="fname" id="fileName">-</div>
+      <div class="fsize" id="fileSize">-</div>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <button class="gen-btn" id="genBtn" onclick="generate()">✦ AI로 요약 + 플래시카드 생성</button>
+  <div class="sticky-wrap" id="stickyWrap">
+    <button class="gen-btn" onclick="generate()">✦ AI로 요약 + 플래시카드 생성</button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>AI가 PDF를 분석하고 있어요...</p>
+    <div class="step" id="loadingStep">내용 읽는 중...</div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="section-title">핵심 요약</div>
+    <div class="summary-card">
+      <h3 id="summaryTitle">-</h3>
+      <div class="summary-content" id="summaryContent"></div>
+      <div class="keywords" id="keywords"></div>
+    </div>
+
+    <div class="flashcards-header">
+      <div class="section-title">플래시카드</div>
+      <div class="card-count" id="cardCount"></div>
+    </div>
+    <div class="flashcard-grid" id="flashcards"></div>
+
+    <button class="reset-btn" onclick="reset()">← 다른 PDF 업로드</button>
+  </div>
+
+</div>
+
+<script>
+let selectedFile = null;
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type === 'application/pdf') setFile(f);
+  else showError('PDF 파일만 업로드 가능해요.');
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) setFile(fileInput.files[0]);
+});
+
+function setFile(f) {
+  selectedFile = f;
+  document.getElementById('fileName').textContent = f.name;
+  document.getElementById('fileSize').textContent = (f.size / 1024 / 1024).toFixed(1) + ' MB';
+  document.getElementById('fileSelected').classList.add('show');
+  document.getElementById('genBtn').classList.add('show');
+  document.getElementById('stickyWrap').classList.add('show');
+  document.getElementById('errorMsg').classList.remove('show');
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function setLoadingStep(msg) {
+  document.getElementById('loadingStep').textContent = msg;
+}
+
+async function toBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej(new Error('파일 읽기 실패'));
+    r.readAsDataURL(file);
+  });
+}
+
+async function generate() {
+  if (!selectedFile) return;
+
+  document.getElementById('genBtn').disabled = true;
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('errorMsg').classList.remove('show');
+
+  try {
+    setLoadingStep('PDF 변환 중...');
+    const base64 = await toBase64(selectedFile);
+
+    setLoadingStep('AI가 내용 분석 중...');
+
+    const prompt = `당신은 정보보호론 전문 강사입니다. 주어진 PDF 문서를 분석하여 아래 형식의 JSON을 반환하세요.
+
+반드시 JSON만 반환하고 다른 텍스트나 마크다운 코드블록은 절대 포함하지 마세요.
+
+{
+  "title": "문서 제목 또는 주요 챕터명",
+  "summary": "핵심 내용을 3~5문단으로 요약. 중요 개념은 **굵게** 표시",
+  "keywords": ["핵심키워드1", "핵심키워드2", ...최대 10개],
+  "flashcards": [
+    {"q": "질문", "a": "답변"},
+    ...최소 10개, 최대 20개
+  ]
+}
+
+플래시카드는 시험에 나올 법한 핵심 개념, 정의, 차이점 위주로 만들어주세요.`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'document',
+              source: { type: 'base64', media_type: 'application/pdf', data: base64 }
+            },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    setLoadingStep('결과 정리 중...');
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || '서버 오류');
+    }
+
+    const data = await response.json();
+    const raw = data.content.map(c => c.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    renderResults(parsed);
+
+  } catch (err) {
+    showError('오류가 발생했어요: ' + err.message);
+  } finally {
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('genBtn').disabled = false;
+  }
+}
+
+function renderResults(data) {
+  // Title & Summary
+  document.getElementById('summaryTitle').textContent = data.title || '요약';
+
+  const summaryEl = document.getElementById('summaryContent');
+  const paragraphs = data.summary.split('\n').filter(p => p.trim());
+  summaryEl.innerHTML = paragraphs.map(p =>
+    '<p>' + p.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') + '</p>'
+  ).join('');
+
+  // Keywords
+  const kwEl = document.getElementById('keywords');
+  kwEl.innerHTML = (data.keywords || []).map(k =>
+    `<span class="keyword">${k}</span>`
+  ).join('');
+
+  // Flashcards
+  const cards = data.flashcards || [];
+  document.getElementById('cardCount').textContent = `총 ${cards.length}장`;
+  const grid = document.getElementById('flashcards');
+  grid.innerHTML = cards.map((c, i) => `
+    <div class="flashcard" onclick="flipCard(this)">
+      <div class="card-front">
+        <div class="card-q">Q. ${c.q}</div>
+        <div class="card-flip-hint">탭하여 정답 확인</div>
+      </div>
+      <div class="card-back">
+        <div class="card-num">카드 ${i + 1} / ${cards.length}</div>
+        <div class="card-back-q">Q. ${c.q}</div>
+        <div class="card-a">${c.a}</div>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('results').classList.add('show');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function flipCard(el) {
+  el.classList.toggle('flipped');
+}
+
+function reset() {
+  selectedFile = null;
+  fileInput.value = '';
+  document.getElementById('fileSelected').classList.remove('show');
+  document.getElementById('genBtn').classList.remove('show');
+  document.getElementById('stickyWrap').classList.remove('show');
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('errorMsg').classList.remove('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+</body>
+</html>

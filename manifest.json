@@ -1,0 +1,15 @@
+{
+  "name": "정보보호론 AI 학습 도우미",
+  "short_name": "AI 학습",
+  "description": "PDF를 업로드하면 AI가 요약과 플래시카드를 만들어줘요",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f11",
+  "theme_color": "#0f0f11",
+  "orientation": "portrait",
+  "lang": "ko",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
